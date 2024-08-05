@@ -70,6 +70,24 @@ function getCurrentDateTime() {
     return res.status(200).send({ message: 'File uploaded successfully.', imageUrl: imageUrl });
   });
 
+  app.post('/upload-images', upload.array('images', 10), (req, res) => {
+    if (!req.files) {
+      return res.status(400).send('No files were uploaded.');
+    }
+  
+    // Get the file details
+    const fileDetails = req.files.map(file => ({
+      filename: file.filename,
+      path: file.path
+    }));
+  
+    res.status(200).json({
+      message: 'Files uploaded successfully!',
+      files: fileDetails
+    });
+  });
+  
+
   
   
 
@@ -184,6 +202,41 @@ function getCurrentDateTime() {
         }
     });
 
+  })
+
+  app.post('/change-password', (req, res) => {
+    console.log(req.body)
+    const { client_id, newPassword,oldPassword } = req.body;
+  
+    const sql = `UPDATE client_profile_account SET client_entry_code = ? WHERE client_id = ? AND client_entry_code = ?`;
+    connection.query(sql, [newPassword, client_id, oldPassword], (err, result) => {
+      if (err) {
+        console.error('Error changing password:', err);
+        res.status(500).send('Error changing password');
+        return;
+      }
+      
+      if (result.affectedRows === 0) {
+        console.log('No matching records found or no changes made');
+        res.status(404).send('No matching records found or incorrect current password');
+      } else {
+        console.log('Password changed successfully');
+        res.status(200).send('Password changed successfully');
+      }
+    });
+  });
+
+  app.post("/updateKyc",(req,res)=>{
+    const {aadhar_front,aadhar_back,pan_card,bank_proof,client_id}=req.body
+    const sql = 'UPDATE `client_profile_personal` SET `adhaar_front_image`=?,`adhaar_back_image`=?,`pan_image`=?,`cheque_image`=? WHERE client_id=?'
+    connection.query(sql, [aadhar_front,aadhar_back,pan_card,bank_proof,client_id], (err, result) => {
+      if (err) {
+        console.error('Error updating profile:', err);
+        res.status(500).send('Error updating profile');
+      } else {
+        res.send('Profile updated successfully');
+      }
+    });
   })
 
   app.get("/",(req,res)=>{
