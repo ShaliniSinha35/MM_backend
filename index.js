@@ -15,7 +15,7 @@ app.use(bodyParser.urlencoded({ extended: false }));
 app.use(express.static("public"));
 
 
-app.use('/uploads/', express.static("uploads/"));
+app.use('/upload/', express.static("upload/"));
 
 app.use((req, res, next) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -39,7 +39,7 @@ function getCurrentDateTime() {
 
   const storage = multer.diskStorage({
     destination: function (req, file, cb) {
-      const uploadPath = 'uploads/';
+      const uploadPath = 'upload/';
       // Ensure the uploads folder exists
       if (!fs.existsSync(uploadPath)) {
         fs.mkdirSync(uploadPath, { recursive: true });
@@ -47,7 +47,7 @@ function getCurrentDateTime() {
       cb(null, uploadPath);
     },
     filename: function (req, file, cb) {
-      const filePath = path.join('uploads', file.originalname);
+      const filePath = path.join('upload', file.originalname);
       // Check if file exists and remove it before saving the new file
       if (fs.existsSync(filePath)) {
         fs.unlinkSync(filePath);
@@ -64,7 +64,7 @@ function getCurrentDateTime() {
       return res.status(400).send('No files were uploaded.');
     }
   
-    const imageUrl = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
+    const imageUrl = `${req.protocol}://${req.get('host')}/upload/${req.file.filename}`;
     console.log(imageUrl);
   
     return res.status(200).send({ message: 'File uploaded successfully.', imageUrl: imageUrl });
