@@ -93,27 +93,83 @@ function getCurrentDateTime() {
 
 
   
-  app.get("/login",(req,res)=>{
-    const {userId,password}= req.query
-    console.log(userId,password)
-    const sql= "SELECT * FROM `client_profile_account`  WHERE client_id=? && client_entry_code = ?"
-  connection.query(sql, [userId, password], (err, result) => {
-    if (err) {
-        console.error('Error searching for user: ' + err.stack);
-        res.status(500).send('Error searching for user');
-        return;
-    }
+  app.get("/login", (req, res) => {
+    const { userId, password } = req.query;
+    console.log(userId, password);
 
-    if (result.length === 0) {
-        console.log('User not found');
-        res.status(404).send(null);
-    } else {
-        console.log('User found');
-        res.status(200).json(result[0]); // Send the user data back as JSON
-    }
+    const sql = `
+        SELECT 
+            cpa.id, 
+            cpa.client_id, 
+            cpa.client_intro_id, 
+            cpa.parent_id, 
+            cpa.position, 
+            cpa.join_date, 
+            cpa.client_entry_name, 
+            cpa.client_entry_code, 
+            cpa.client_account_code, 
+            cpa.repurchase_wallet, 
+            cpa.level_wallet, 
+            cpa.cashback_wallet, 
+            cpa.activated_pin, 
+            cpa.activated_pin_cost, 
+            cpa.activate_package_id, 
+            cpa.activate_product_id, 
+            cpa.activation_status, 
+            cpa.activation_date, 
+            cpa.activation_time, 
+            cpa.blocked_status, 
+            cpa.current_badge, 
+            cpa.gpg_done, 
+            cpa.current_club, 
+            cpa.level, 
+            cpa.level_paid, 
+            cpa.reward_id, 
+            cpa.reward_name, 
+            cpa.task_assigned_date, 
+            cpa.user_by, 
+            cpa.user_type, 
+            cpa.created_at, 
+            cpa.updated_at, 
+            cpa.mani_wallet, 
+            cpa.shopping_wallet, 
+            cpa.matching_bv, 
+            cpa.scooty_wallet, 
+            cpa.business_approval, 
+            cp.business_type AS business_type
+        FROM 
+            client_profile_account AS cpa
+        LEFT JOIN 
+            client_profile_personal AS cp 
+        ON 
+            cp.client_id = cpa.client_id
+        WHERE 
+            cpa.client_id = ? 
+        AND 
+            cpa.client_entry_code = ? 
+        AND 
+            cp.business_type != ?
+    `;
+
+    const businessType = "Business"; // Assuming you're looking for this specific business type
+
+    connection.query(sql, [userId, password,businessType], (err, result) => {
+        if (err) {
+            console.error('Error searching for user: ' + err.stack);
+            res.status(500).send('Error searching for user');
+            return;
+        }
+
+        if (result.length === 0) {
+            console.log('User not found');
+            res.status(404).send(null);
+        } else {
+            console.log('User found');
+            res.status(200).json(result[0]); // Send the user data back as JSON
+        }
+    });
 });
 
-  })
 
   app.get("/clientDetails",(req,res)=>{
     const {client_id}= req.query
@@ -238,6 +294,198 @@ function getCurrentDateTime() {
       }
     });
   })
+
+
+// app.get('/products', (req, res) => {
+
+//   const {product_id}= req.query
+//     const sql = `
+//         SELECT 
+//             mp.id, 
+//             mp.pcode, 
+//             mp.name, 
+//             mp.category, 
+//             mp.sub_category, 
+//             mp.sub_sub_category, 
+//             mp.brand, 
+//             mp.details, 
+//             mp.config_data, 
+//             mp.old_image, 
+//             mp.cby, 
+//             mp.cdate, 
+//             mp.status, 
+//             mp.varient, 
+//             mp.image, 
+//             mc.name AS category_name, 
+//             mb.name AS brand_name, 
+//             ms.image AS image_sale,
+//             ms.mrp AS mrp,
+//             ms.price AS price,
+//             ms.cart_limit AS cart_limit
+//         FROM 
+//             master_product mp
+//         LEFT JOIN 
+//             manage_category mc ON mp.category = mc.cat_id
+//         LEFT JOIN 
+//             manage_brand mb ON mp.brand = mb.brand_id
+//         LEFT JOIN 
+//             master_sale ms ON mp.pcode = ms.pcode
+//         WHERE 
+//            mp.pcode = ?
+//     `;
+
+//     connection.query(sql,[product_id], (err, results) => {
+//         if (err) {
+//             console.error('Error executing query:', err);
+//             res.status(500).send('An error occurred while fetching products.');
+//             return;
+//         }
+//         res.json(results);
+//     });
+// });
+
+
+app.get("/allShops",(req,res)=>{
+  const sql= `SELECT 
+    cpp.auto_id, 
+    cpp.client_id, 
+    cpp.m_name, 
+    cpp.first_name, 
+    cpp.last_name, 
+    cpp.m_dob, 
+    cpp.m_sex, 
+    cpp.m_father_name, 
+    cpp.m_address, 
+    cpp.m_city, 
+    cpp.m_state, 
+    cpp.district, 
+    cpp.sub_division, 
+    cpp.block, 
+    cpp.panchayat, 
+    cpp.m_pin, 
+    cpp.m_country, 
+    cpp.m_mobile, 
+    cpp.m_email, 
+    cpp.m_pan, 
+    cpp.m_adhar_no, 
+    cpp.bank_name, 
+    cpp.bank_ac_holder, 
+    cpp.bank_ac_no, 
+    cpp.bank_branch, 
+    cpp.bank_account_type, 
+    cpp.bank_ifsc_code, 
+    cpp.nominee_name, 
+    cpp.nominee_relation, 
+    cpp.nominee_age, 
+    cpp.nominee_mobile, 
+    cpp.wallet_type, 
+    cpp.wallet_holder_name, 
+    cpp.wallet_no, 
+    cpp.photo, 
+    cpp.adhaar_front_image, 
+    cpp.adhaar_back_image, 
+    cpp.pan_image, 
+    cpp.cheque_image, 
+    cpp.kyc_status, 
+    cpp.kyc_remark, 
+    cpp.kyc_date, 
+    cpp.created_at, 
+    cpp.updated_at, 
+    cpp.whatsapp, 
+    cpp.otp, 
+    cpp.business_name, 
+    cpp.licence, 
+    cpp.licence_img, 
+    cpp.gst, 
+    cpp.pan, 
+    cpp.street, 
+    cpp.business_type,
+    cpa.business_approval
+FROM 
+    client_profile_personal cpp
+JOIN 
+    client_profile_account cpa 
+ON 
+   cpp.client_id = cpa.client_id WHERE cpp.business_type='Business' AND cpa.business_approval='1';
+`
+connection.query(sql, (err, results) => {
+  if (err) {
+      console.error('Error executing query:', err);
+      res.status(500).send('An error occurred while fetching products.');
+      return;
+  }
+  res.json(results);
+});
+
+
+})
+
+
+app.get("/getProductId",(req,res)=>{
+  const {client_id}= req.query
+  console.log("clientid",client_id)
+  const sql='SELECT distinct `pid` FROM `manage_lmc_order_details` WHERE cby=?'
+  connection.query(sql,[client_id], (err, results) => {
+    if (err) {
+        console.error('Error executing query:', err);
+        res.status(500).send('An error occurred while fetching products.');
+        return;
+    }
+    res.json(results);
+    console.log(results)
+  });
+
+})
+
+app.get("/products",(req,res)=>{
+   const {product_id}= req.query
+   console.log(product_id,"productid")
+   const sql=`SELECT 
+    ms.id, 
+    ms.sale_id, 
+    ms.barcode, 
+    ms.pcode, 
+    ms.mrp, 
+    ms.price, 
+    ms.todays_offer, 
+    ms.best_selling, 
+    ms.cart_limit,  
+    ms.stock_status, 
+    ms.first_purchase, 
+    ms.pincode, 
+    ms.image AS sale_image, 
+    ms.main_product, 
+    mp.name, 
+    mp.category, 
+    mp.sub_category, 
+    mp.sub_sub_category, 
+    mp.brand, 
+    mp.details, 
+    mc.name AS category_name, 
+    mb.name AS brand_name, 
+    mp.image AS product_image
+FROM 
+    master_sale ms
+JOIN 
+    master_product mp  ON  ms.pcode = mp.pcode
+JOIN 
+  manage_category mc ON mp.category = mc.cat_id
+JOIN 
+ manage_brand mb ON mp.brand = mb.brand_id   
+
+WHERE 
+    ms.sale_id = ?;`
+
+   connection.query(sql,[product_id], (err, results) => {
+    if (err) {
+        console.error('Error executing query:', err);
+        res.status(500).send('An error occurred while fetching products.');
+        return;
+    }
+    res.json(results);
+  });
+
+})
 
   app.get("/",(req,res)=>{
     res.send("Hello")
