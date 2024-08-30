@@ -1029,6 +1029,78 @@ app.post('/mediplex/client_payout', async (req, res) => {
 });
 
 
+app.get("/mediplex/clientAccountLog",(req,res)=>{
+  const sql= "SELECT * FROM `client_account_log` ORDER BY id DESC"
+
+  connection.query(sql, (err, results) => {
+    if (err) {
+      console.error('Error executing select query:', err);
+      return res.status(500).send('An error occurred while fetching the updated row.');
+    }
+
+
+    res.json(results); 
+  });
+})
+
+app.get("/mediplex/clientName", (req, res) => {
+  const { root, left, right } = req.query;
+  console.log(req.query, "1052");
+
+  // Collect all client IDs
+  const clientIds = [root, left, right].filter(Boolean);
+
+  if (clientIds.length === 0) {
+    return res.status(400).send('No client IDs provided.');
+  }
+
+  // Prepare SQL query with placeholders
+  const sql = `SELECT cpp.first_name, cpp.client_id, cpa.activation_status as active
+  FROM client_profile_personal cpp
+  JOIN client_profile_account AS cpa 
+  ON cpa.client_id = cpp.client_id
+  WHERE cpp.client_id IN (${clientIds.map(() => '?').join(',')})`;
+
+  connection.query(sql, clientIds, (err, results) => {
+    if (err) {
+      console.error('Error executing select query:', err);
+      return res.status(500).send('An error occurred while fetching the data.');
+    } 
+    res.json(results);
+  });
+})
+
+app.get("/mediplex/directMemberData",(req,res)=>{
+  const {parent_id}= req.query
+
+  console.log(parent_id)
+
+  const sql= `SELECT cpa.client_id, cpa.parent_id, cpa.position, cpa.join_date, cpa.activate_package_id, cpa.activate_product_id, cpa.activation_status, cpa.activation_date,
+cpp.first_name as client_name,
+mp.name as package_name
+FROM client_profile_account cpa 
+JOIN client_profile_personal AS cpp ON 
+ cpa.client_id = cpp.client_id
+ JOIN manage_package AS mp ON
+ cpa.activate_package_id= mp.package_id
+ 
+WHERE parent_id=? `
+
+   connection.query(sql,[parent_id],(error,results)=>{
+    if (error) {
+      console.error('Error executing select query:', err);
+      return res.status(500).send('An error occurred while fetching the data.');
+    }
+    res.json(results);
+   })
+
+
+})
+
+
+
+
+
 app.get("/mediplex", (req, res) => {
   res.send("Hello")
 })
