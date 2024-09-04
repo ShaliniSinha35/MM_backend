@@ -35,14 +35,10 @@ app.use((req, res, next) => {
 const connection = mysql.createPool({
 
 
-  // host: "119.18.55.247",
-  // user: "mahilamediplex_website_user",
-  // password: "vz}@z2*+M{3g",
-  // database:"mahilamediplex_website_db",
-  host: "localhost",
-  user: "root",
-  password: "",
-  database:"mahilamediplex",
+  host: "119.18.55.247",
+  user: "mahilamediplex_website_user",
+  password: "vz}@z2*+M{3g",
+  database:"mahilamediplex_website_db",
   timezone: 'Asia/Kolkata'
 });
 
@@ -244,9 +240,6 @@ app.get("/mediplex/login", (req, res) => {
             cpa.matching_bv, 
             cpa.scooty_wallet, 
             cpa.business_approval, 
-            cp.bank_name,
-            cp.bank_ac_no,
-            cp.bank_ifsc_code,
             cp.business_type AS business_type,
             cp.first_name AS first_name,
             cp.m_mobile AS mobile
@@ -333,21 +326,17 @@ app.post('/mediplex/updateProfile', (req, res) => {
     bank_branch,
     bank_account_type,
     bank_ifsc_code,
-    bank_account_number,
     m_pan,
     client_id
   } = req.body;
 
-  
-
-
   const query = `
       UPDATE client_profile_personal 
       SET first_name = ?, m_dob = ?, m_father_name = ?, m_address = ?, m_city = ?, m_state = ?, district=?, m_pin = ?, m_country = ?, m_mobile = ?, m_email = ?, photo = ?, created_at = ?, whatsapp = ? ,
-      nominee_name=?, nominee_age=?,nominee_relation=?,nominee_mobile=?,bank_name=?,bank_ac_holder=?,bank_branch=?,bank_account_type=?,bank_ifsc_code=?,m_pan=?,bank_ac_no=?
+      nominee_name=?, nominee_age=?,nominee_relation=?,nominee_mobile=?,bank_name=?,bank_ac_holder=?,bank_branch=?,bank_account_type=?,bank_ifsc_code=?,m_pan=?
       WHERE client_id = ?`;
 
-  const values = [first_name, m_dob, m_father_name, m_address, m_city, m_state,district, m_pin, m_country, m_mobile, m_email, photo, cdate_time, whatsapp, nominee_name, nominee_age, nominee_relation, nominee_mobile, bank_name, bank_ac_holder, bank_branch, bank_account_type, bank_ifsc_code, m_pan,bank_account_number, client_id];
+  const values = [first_name, m_dob, m_father_name, m_address, m_city, m_state,district, m_pin, m_country, m_mobile, m_email, photo, cdate_time, whatsapp, nominee_name, nominee_age, nominee_relation, nominee_mobile, bank_name, bank_ac_holder, bank_branch, bank_account_type, bank_ifsc_code, m_pan, client_id];
 
   connection.query(query, values, (err, result) => {
     if (err) {
@@ -1164,40 +1153,6 @@ app.get("/mediplex/clients",(req,res)=>{
 })
 
 
-app.post("/mediplex/addWithdrawDetails",(req,res)=>{
-
-  const {user_id,total}= req.body
-  console.log(req.body)
-  const cdate_time=getCurrentDateTime()
-  const sql = `INSERT INTO user_payment_history( user_id, total,cdate,status) VALUES (?,?,?,?) `
-   connection.query(sql,[user_id,total,cdate_time,'9'],(error,results)=>{
-    if (error) {
-      console.error('Error executing select query:', error);
-      return res.status(500).send('An error occurred while fetching the data.');
-    }
-    res.status(200).json({ message: 'Inserted successfully', result: results });
-
-   })
-})
-
-
-
-app.get("/mediplex/getWithdrawData",(req,res)=>{
-  const {client_id}= req.query
-
-  const sql= "SELECT * FROM `user_payment_history` WHERE user_id=?"
-
-  connection.query(sql,[client_id],(error,results)=>{
-    if (error) {
-      console.error('Error executing select query:', error);
-      return res.status(500).send('An error occurred while fetching the data.');
-    }
-    res.status(200).json(results);
-
-   })
-
-
-})
 
 
 
