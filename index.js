@@ -33,16 +33,10 @@ app.use((req, res, next) => {
 
 
 const connection = mysql.createPool({
-
-
-  // host: "119.18.55.247",
-  // user: "mahilamediplex_website_user",
-  // password: "vz}@z2*+M{3g",
-  // database:"mahilamediplex_website_db",
-  host: "localhost",
-  user: "root",
-  password: "",
-  database:"mahilamediplex",
+  host: "119.18.55.247",
+  user: "mahilamediplex_website_user",
+  password: "vz}@z2*+M{3g",
+  database:"mahilamediplex_website_db",
   timezone: 'Asia/Kolkata'
 });
 
@@ -572,7 +566,7 @@ ON
 
 app.get("/mediplex/getProductId", (req, res) => {
   const { client_id } = req.query
-  console.log("clientid", client_id)
+  // console.log("clientid", client_id)
   const sql = 'SELECT distinct `pid` FROM `manage_lmc_order_details` WHERE cby=? AND status=3'
   connection.query(sql, [client_id], (err, results) => {
     if (err) {
@@ -715,6 +709,21 @@ app.get("/mediplex/sponsorIncome",(req,res)=>{
     res.json(results);
   })
 })
+
+app.get("/mediplex/dailyIncome",(req,res)=>{
+
+  const {client_id}=req.query
+  const sql=`SELECT * FROM direct_income where user_id=? AND status=1`
+  connection.query(sql,[client_id],(err,results)=>{
+    if (err) {
+      console.error('Error executing query:', err);
+      return res.status(500).send('An error occurred while fetching KYC data.');
+    }
+
+    res.json(results);
+  })
+})
+
 
 app.get("/mediplex/healthPackage", (req,res)=>{
   const sql = "SELECT * FROM `manage_package` WHERE STATUS='1';"
@@ -1198,6 +1207,7 @@ app.get("/mediplex/getWithdrawData",(req,res)=>{
 
 
 })
+
 
 
 
