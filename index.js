@@ -130,6 +130,7 @@ const upload = multer({
 });
 
 
+
 app.post('/mediplex/uploadImage', upload.single('image'), (req, res) => {
   const imgName = req.query.imgName;
 
@@ -596,6 +597,7 @@ app.get("/mediplex/products", (req, res) => {
     ms.cart_limit,  
     ms.stock_status, 
     ms.first_purchase, 
+    ms.prescription,
     ms.pincode, 
     ms.image AS sale_image, 
     ms.main_product, 
@@ -1211,8 +1213,6 @@ app.get("/mediplex/getWithdrawData", (req, res) => {
 })
 
 
-
-
 app.get("/mediplex/orderHistory",(req,res)=>{
   const {uid}= req.query
   const sql=`SELECT  
@@ -1240,6 +1240,17 @@ WHERE mts.uid =? ORDER BY mts.id DESC;`
     res.send(result)
  })
 
+})
+
+
+app.get("/mediplex/master_sale",(req,res)=>{
+  const sql="Select * from manage_temp_sale"
+  connection.query(sql,(result,error)=>{
+    if(error){
+      res.send(error)
+    }
+    res.send(result)
+  })
 })
 
 

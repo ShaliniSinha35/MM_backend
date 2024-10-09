@@ -469,7 +469,7 @@ FROM
 JOIN 
     client_profile_account cpa 
 ON 
-   cpp.client_id = cpa.client_id WHERE cpp.business_type='Business' AND cpa.business_approval='1';
+   cpp.client_id = cpa.client_'id WHERE cpp.business_type='Business' AND cpa.business_approval='1;
 `
   connection.query(sql, (err, results) => {
     if (err) {
