@@ -165,6 +165,7 @@ app.post('/mediplex/uploadImage', upload.single('image'), (req, res) => {
 });
 
 
+
 app.use((err, req, res, next) => {
   if (err instanceof multer.MulterError) {
     return res.status(500).json({ message: err.message });
@@ -195,6 +196,25 @@ app.post('/mediplex/upload-images', upload.array('images', 10), (req, res) => {
     files: fileDetails
   });
 });
+
+app.get("/mediplex/verify", (req, res) => {
+  const { client_id } = req.query
+  const sql = "SELECT  COUNT(*) FROM `client_profile_account` WHERE client_id=?"
+  connection.query(sql, [client_id], (err, result) => {
+    if (err) {
+
+      res.status(500).send('ClientId not found');
+      return;
+    }
+
+    if (result.length === 0) {
+      res.status(404).send(null);
+    } else {
+      console.log('User verify');
+      res.status(200).json(result);
+    }
+  })
+})
 
 app.get("/mediplex/login", (req, res) => {
   const { userId, password } = req.query;
@@ -578,6 +598,7 @@ app.get("/mediplex/getProductId", (req, res) => {
     }
     res.json(results);
     console.log(results)
+    
   });
 
 })
@@ -633,14 +654,16 @@ WHERE
 
 })
 
+
 app.post("/mediplex/orderDetails", (req, res) => {
   const cdate_time = getCurrentDateTime();
-  const { uid, lmc_id, pid, qty, barcode, cby } = req.body;
+  const { uid, lmc_id, pid, qty, barcode, cby,image,payment_type } = req.body;
 
-  const query = `INSERT INTO manage_temp_sale(uid, lmc_id, pid, qty, barcode, cby, cdate, status) 
-                   VALUES (?, ?, ?, ?, ?, ?, ?, ?)`;
 
-  connection.query(query, [uid, lmc_id, pid, qty, barcode, cby, cdate_time, '1'], (err, result) => {
+  const query = `INSERT INTO manage_temp_sale(uid, lmc_id, pid, qty, barcode, cby, prescription,payment_type, cdate, status) 
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?,?,?)`;
+
+  connection.query(query, [uid, lmc_id, pid, qty, barcode, cby, image,payment_type, cdate_time, '1'], (err, result) => {
     if (err) {
       console.error('Error executing query:', err);
       res.status(500).json({ error: 'Failed to insert data' });
@@ -1213,45 +1236,110 @@ app.get("/mediplex/getWithdrawData", (req, res) => {
 })
 
 
-app.get("/mediplex/orderHistory",(req,res)=>{
-  const {uid}= req.query
-  const sql=`SELECT  
-    mts.uid, 
-    mts.lmc_id, 
-    mts.pid, 
-    mts.qty, 
-    mts.barcode, 
-    mts.cdate, 
-    mts.status,
-    ms.mrp,
-    ms.price,mp.name,ms.image as sale_image, mp.image as product_image
-FROM manage_temp_sale mts
-JOIN master_sale ms
-    ON mts.pid = ms.sale_id
-JOIN
-master_product mp
-on ms.pcode= mp.pcode    
-WHERE mts.uid =? ORDER BY mts.id DESC;`
-  connection.query(sql,[uid],(err,result)=>{
-    if(err){
-     res.send(err.message)
+app.get("/mediplex/ordersHistory", (req, res) => {
+  const { uid } = req.query
+//   const sql = `SELECT  
+//     mts.uid, 
+//     mts.lmc_id, 
+//     mts.pid, 
+//     mts.qty, 
+//     mts.barcode, 
+//     mts.cdate, 
+//     mts.status,
+//     ms.mrp,
+//     ms.price,mp.name,ms.image as sale_image, mp.image as product_image
+// FROM manage_temp_sale mts
+// JOIN master_sale ms
+//     ON mts.pid = ms.sale_id
+// JOIN
+// master_product mp
+// on ms.pcode= mp.pcode    
+// WHERE mts.uid =? ORDER BY mts.id DESC;`
+
+const sql = `SELECT op.id, op.order_id, op.product_id, op.user_id, op.name, op.qty, op.price, op.offer_price,op.status, op.cashback, op.cancel_reason, op.sale_id,
+o.order_date,o.payment_method, o.user_payable_amount,o.delivery_new_date, mp.image, o.lmc_id,cpp.business_name
+FROM order_products op
+JOIN orders o ON  op.user_id= o.user_id
+JOIN master_product mp ON op.product_id = mp.pcode
+JOIN client_profile_personal cpp ON  o.lmc_id = cpp.client_id
+WHERE op.user_id=? ORDER BY op.id DESC;`
+  connection.query(sql, [uid], (err, result) => {
+    if (err) {
+      res.send(err.message)
     }
 
     res.send(result)
- })
+  })
 
 })
 
 
-app.get("/mediplex/master_sale",(req,res)=>{
-  const sql="Select * from manage_temp_sale"
-  connection.query(sql,(result,error)=>{
-    if(error){
+app.get("/mediplex/master_sale", (req, res) => {
+  const sql = "Select * from manage_temp_sale"
+  connection.query(sql, (result, error) => {
+    if (error) {
       res.send(error)
     }
     res.send(result)
   })
 })
+
+
+app.get("/mediplex/bannerImage",(req,res)=>{
+  const sql=`SELECT id, image, status FROM app_banner where status= "Publish" `
+
+  connection.query(sql,(err,result)=>{
+    if (err) {
+      res.send(err)
+    }
+    res.send(result)
+  })
+  })
+
+
+
+  app.get("/mediplex/verifyCart",(req,res)=>{
+    const {product_id}= req.query;
+
+    const sql = `SELECT  COUNT(*) FROM master_sale WHERE sale_id=?`
+  
+    connection.query(sql,[product_id],(err,result)=>{
+      if (err) {
+
+        res.status(500).send('ClientId not found');
+        return;
+      }
+  
+      if (result.length === 0) {
+        res.status(404).send(null);
+      } else {
+        console.log('item verify');
+        res.status(200).json(result);
+      }
+    })
+  })
+
+
+
+  app.get("/mediplex/wallet_amt", (req, res) => {
+    const { client_id } = req.query
+    console.log(client_id)
+    const sql = "SELECT mani_wallet FROM client_profile_account where client_id=?"
+  
+    connection.query(sql,[client_id], (error, results) => {
+      if (error) {
+        console.error('Error executing select query:', error);
+        return res.status(500).send('An error occurred while fetching the data.');
+      }
+      res.json(results);
+    })
+  
+  
+  })
+  
+
+
+  
 
 
 
