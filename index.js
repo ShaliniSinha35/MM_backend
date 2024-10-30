@@ -1237,41 +1237,39 @@ app.get("/mediplex/getWithdrawData", (req, res) => {
 
 
 app.get("/mediplex/ordersHistory", (req, res) => {
-  const { uid } = req.query
-//   const sql = `SELECT  
-//     mts.uid, 
-//     mts.lmc_id, 
-//     mts.pid, 
-//     mts.qty, 
-//     mts.barcode, 
-//     mts.cdate, 
-//     mts.status,
-//     ms.mrp,
-//     ms.price,mp.name,ms.image as sale_image, mp.image as product_image
-// FROM manage_temp_sale mts
-// JOIN master_sale ms
-//     ON mts.pid = ms.sale_id
-// JOIN
-// master_product mp
-// on ms.pcode= mp.pcode    
-// WHERE mts.uid =? ORDER BY mts.id DESC;`
+  const { uid, order_id } = req.query;
 
-const sql = `SELECT op.id, op.order_id, op.product_id, op.user_id, op.name, op.qty, op.price, op.offer_price,op.status, op.cashback, op.cancel_reason, op.sale_id,
-o.order_date,o.payment_method, o.user_payable_amount,o.delivery_new_date, mp.image, o.lmc_id,cpp.business_name
-FROM order_products op
-JOIN orders o ON  op.user_id= o.user_id
-JOIN master_product mp ON op.product_id = mp.pcode
-JOIN client_profile_personal cpp ON  o.lmc_id = cpp.client_id
-WHERE op.user_id=? ORDER BY op.id DESC;`
-  connection.query(sql, [uid], (err, result) => {
+  console.log(uid,order_id)
+
+  // Check if uid and order_id are provided
+  
+  if (!uid || !order_id) {
+    return res.status(400).json({ message: "User ID and Order ID are required." });
+  }
+
+  const sql = `
+    SELECT op.id, op.order_id, op.product_id, op.user_id, op.name, op.qty, op.price, op.offer_price, op.status, op.cashback, 
+           op.cancel_reason, op.sale_id, mp.image, cpp.business_name
+    FROM order_products op
+    JOIN master_product mp ON op.product_id = mp.pcode
+    JOIN client_profile_personal cpp ON op.lmc_id = cpp.client_id
+    WHERE op.user_id = ? AND op.order_id = ? 
+    ORDER BY op.id DESC;
+  `;
+
+  connection.query(sql, [uid, order_id], (err, result) => {
     if (err) {
-      res.send(err.message)
+      return res.status(500).json({ error: "Database error", message: err.message });
     }
 
-    res.send(result)
-  })
+    if (result.length === 0) {
+      return res.status(404).json({ message: "No order history found for this order ID." });
+    }
 
-})
+    res.status(200).json({ orderDetails: result });
+  });
+});
+
 
 
 app.get("/mediplex/master_sale", (req, res) => {
@@ -1336,7 +1334,25 @@ app.get("/mediplex/bannerImage",(req,res)=>{
   
   
   })
+
+
   
+  app.get("/mediplex/allOrders", (req, res) => {
+    const { uid } = req.query
+    const sql = `SELECT o.order_date, o.order_id, o.payment_method,o.payment_status,o.delivery_date, cpp.business_name,o.user_payable_amount FROM orders o
+     JOIN client_profile_personal cpp ON  o.lmc_id = cpp.client_id
+where o.user_id=?`
+  
+    connection.query(sql,[uid], (error, results) => {
+      if (error) {
+        console.error('Error executing select query:', error);
+        return res.status(500).send('An error occurred while fetching the data.');
+      }
+      res.json(results);
+    })
+  
+  
+  })
 
 
   
