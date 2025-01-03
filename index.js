@@ -33,11 +33,11 @@ app.use((req, res, next) => {
 
 
 const connection = mysql.createPool({
-  host: "119.18.55.247",
+ host: "119.18.55.247",
   user: "mahilamediplex_website_user",
   password: "vz}@z2*+M{3g",
   database: "mahilamediplex_website_db",
-  timezone: 'Asia/Kolkata'
+  timezone: 'Asia/Kolkata' 
 });
 
 
@@ -199,7 +199,7 @@ app.post('/mediplex/upload-images', upload.array('images', 10), (req, res) => {
 
 app.get("/mediplex/verify", (req, res) => {
   const { client_id } = req.query
-  const sql = "SELECT  COUNT(*) FROM `client_profile_account` WHERE client_id=?"
+  const sql = "SELECT  COUNT(*) FROM `user_register_account` WHERE client_id=?"
   connection.query(sql, [client_id], (err, result) => {
     if (err) {
 
@@ -303,7 +303,7 @@ app.get("/mediplex/login", (req, res) => {
 
 app.get("/mediplex/clientDetails", (req, res) => {
   const { client_id } = req.query
-  const sql = "SELECT * FROM `client_profile_personal` WHERE client_id=?"
+  const sql = "SELECT * FROM `user_register_account` WHERE client_id=?"
   connection.query(sql, [client_id], (err, result) => {
     if (err) {
 
@@ -328,29 +328,10 @@ app.post('/mediplex/updateProfile', (req, res) => {
   const cdate_time = getCurrentDateTime();
   const {
     first_name,
-    m_dob,
-    m_father_name,
     m_address,
-    m_city,
-    m_state,
-    district,
-    m_pin,
-    m_country,
     m_mobile,
     m_email,
     photo,
-    whatsapp,
-    nominee_name,
-    nominee_age,
-    nominee_relation,
-    nominee_mobile,
-    bank_name,
-    bank_ac_holder,
-    bank_branch,
-    bank_account_type,
-    bank_ifsc_code,
-    bank_account_number,
-    m_pan,
     client_id
   } = req.body;
 
@@ -358,12 +339,11 @@ app.post('/mediplex/updateProfile', (req, res) => {
 
 
   const query = `
-      UPDATE client_profile_personal 
-      SET first_name = ?, m_dob = ?, m_father_name = ?, m_address = ?, m_city = ?, m_state = ?, district=?, m_pin = ?, m_country = ?, m_mobile = ?, m_email = ?, photo = ?, created_at = ?, whatsapp = ? ,
-      nominee_name=?, nominee_age=?,nominee_relation=?,nominee_mobile=?,bank_name=?,bank_ac_holder=?,bank_branch=?,bank_account_type=?,bank_ifsc_code=?,m_pan=?,bank_ac_no=?
+      UPDATE user_register_account
+      SET client_entry_name = ?, address = ?, mobile = ?, email = ?, image = ?, updated_at = ?
       WHERE client_id = ?`;
 
-  const values = [first_name, m_dob, m_father_name, m_address, m_city, m_state, district, m_pin, m_country, m_mobile, m_email, photo, cdate_time, whatsapp, nominee_name, nominee_age, nominee_relation, nominee_mobile, bank_name, bank_ac_holder, bank_branch, bank_account_type, bank_ifsc_code, m_pan, bank_account_number, client_id];
+  const values = [first_name, m_address, m_mobile, m_email, photo, cdate_time, client_id];
 
   connection.query(query, values, (err, result) => {
     if (err) {
@@ -400,7 +380,7 @@ app.post('/mediplex/change-password', (req, res) => {
   console.log(req.body)
   const { client_id, newPassword, oldPassword } = req.body;
 
-  const sql = `UPDATE client_profile_account SET client_entry_code = ? WHERE client_id = ? AND client_entry_code = ?`;
+  const sql = `UPDATE user_register_account SET client_entry_code = ? WHERE client_id = ? AND client_entry_code = ?`;
   connection.query(sql, [newPassword, client_id, oldPassword], (err, result) => {
     if (err) {
       console.error('Error changing password:', err);
@@ -598,7 +578,7 @@ app.get("/mediplex/getProductId", (req, res) => {
     }
     res.json(results);
     console.log(results)
-    
+
   });
 
 })
@@ -610,6 +590,7 @@ app.get("/mediplex/products", (req, res) => {
     ms.id, 
     ms.sale_id, 
     ms.barcode, 
+    ms.batch_no,
     ms.pcode, 
     ms.mrp, 
     ms.price, 
@@ -657,13 +638,15 @@ WHERE
 
 app.post("/mediplex/orderDetails", (req, res) => {
   const cdate_time = getCurrentDateTime();
-  const { uid, lmc_id, pid, qty, barcode, cby,image,payment_type } = req.body;
+  const { uid, order_id, lmc_id, pid, qty, wallet_type, shoppingWallet, mainWallet, barcode, cby, image, payment_type,location } = req.body;
+
+  console.log(order_id, payment_type)
 
 
-  const query = `INSERT INTO manage_temp_sale(uid, lmc_id, pid, qty, barcode, cby, prescription,payment_type, cdate, status) 
-                   VALUES (?, ?, ?, ?, ?, ?, ?, ?,?,?)`;
+  const query = `INSERT INTO user_orders(uid,temp_order_id, lmc_id, pid, qty,wallet_type,shopping_wallet_used,main_wallet_used, barcode, cby, prescription,payment_type, cdate, status,location) 
+                   VALUES (?,?, ?, ?, ?, ?, ?, ?, ?,?,?,?,?,?,?)`;
 
-  connection.query(query, [uid, lmc_id, pid, qty, barcode, cby, image,payment_type, cdate_time, '1'], (err, result) => {
+  connection.query(query, [uid, order_id, lmc_id, pid, qty, wallet_type, shoppingWallet, mainWallet, barcode, cby, image, payment_type, cdate_time, '1',location], (err, result) => {
     if (err) {
       console.error('Error executing query:', err);
       res.status(500).json({ error: 'Failed to insert data' });
@@ -674,17 +657,7 @@ app.post("/mediplex/orderDetails", (req, res) => {
 
 })
 
-app.get("/mediplex/details", (req, res) => {
-  const sql = "SELECT * FROM `client_profile_personal'"
-  connection.query(sql, (err, results) => {
-    if (err) {
-      console.error('Error executing query:', err);
-      res.status(500).send('An error occurred while fetching products.');
-      return;
-    }
-    res.json(results);
-  });
-})
+
 
 app.get("/mediplex/getKYCData", (req, res) => {
   const client_id = req.query.client_id; // Use req.query to access query parameters
@@ -952,7 +925,7 @@ app.get("/mediplex/updateMainWallet", (req, res) => {
   const { newBalance, client_id } = req.query;
   console.log(req.query);
 
-  const updateSql = 'UPDATE `client_profile_account` SET mani_wallet=? WHERE client_id=?';
+  const updateSql = 'UPDATE `user_register_account` SET mani_wallet=? WHERE client_id=?';
 
   connection.query(updateSql, [newBalance, client_id], (err, results) => {
     if (err) {
@@ -961,7 +934,7 @@ app.get("/mediplex/updateMainWallet", (req, res) => {
     }
 
     // If the update was successful, fetch the updated row
-    const selectSql = 'SELECT * FROM `client_profile_account` WHERE client_id=?';
+    const selectSql = 'SELECT * FROM `user_register_account` WHERE client_id=?';
 
     connection.query(selectSql, [client_id], (err, updatedRow) => {
       if (err) {
@@ -973,7 +946,31 @@ app.get("/mediplex/updateMainWallet", (req, res) => {
     });
   });
 });
+app.get("/mediplex/updateShoppingWallet", (req, res) => {
+  const { newBalance, client_id } = req.query;
 
+
+  const updateSql = 'UPDATE `user_register_account` SET shopping_wallet=? WHERE client_id=?';
+
+  connection.query(updateSql, [newBalance, client_id], (err, results) => {
+    if (err) {
+      console.error('Error executing update query:', err);
+      return res.status(500).send('An error occurred while updating the wallet.');
+    }
+
+    // If the update was successful, fetch the updated row
+    const selectSql = 'SELECT * FROM `user_register_account` WHERE client_id=?';
+
+    connection.query(selectSql, [client_id], (err, updatedRow) => {
+      if (err) {
+        console.error('Error executing select query:', err);
+        return res.status(500).send('An error occurred while fetching the updated row.');
+      }
+
+      res.json(updatedRow[0]); // Return the updated row as JSON
+    });
+  });
+});
 
 app.post("/mediplex/mainWalletLog", (req, res) => {
 
@@ -1144,7 +1141,6 @@ WHERE cpa.parent_id=? `
 
 })
 
-
 app.get("/mediplex/downlineList", (req, res) => {
   const { client_id } = req.query
   console.log(client_id)
@@ -1186,7 +1182,7 @@ WHERE
 app.get("/mediplex/clients", (req, res) => {
   const { client_id } = req.query
   console.log(client_id)
-  const sql = "SELECT * FROM client_profile_account"
+  const sql = "SELECT * FROM user_register_account"
 
   connection.query(sql, (error, results) => {
     if (error) {
@@ -1239,19 +1235,20 @@ app.get("/mediplex/getWithdrawData", (req, res) => {
 app.get("/mediplex/ordersHistory", (req, res) => {
   const { uid, order_id } = req.query;
 
-  console.log(uid,order_id)
+  console.log(uid, order_id)
 
   // Check if uid and order_id are provided
-  
+
   if (!uid || !order_id) {
     return res.status(400).json({ message: "User ID and Order ID are required." });
   }
 
   const sql = `
     SELECT op.id, op.order_id, op.product_id, op.user_id, op.name, op.qty, op.price, op.offer_price, op.status, op.cashback, 
-           op.cancel_reason, op.sale_id, mp.image, cpp.business_name
+           op.cancel_reason, op.sale_id, mp.image, cpp.business_name, ms.batch_no
     FROM order_products op
     JOIN master_product mp ON op.product_id = mp.pcode
+        JOIN master_sale ms ON op.product_id = ms.pcode
     JOIN client_profile_personal cpp ON op.lmc_id = cpp.client_id
     WHERE op.user_id = ? AND op.order_id = ? 
     ORDER BY op.id DESC;
@@ -1273,7 +1270,7 @@ app.get("/mediplex/ordersHistory", (req, res) => {
 
 
 app.get("/mediplex/master_sale", (req, res) => {
-  const sql = "Select * from manage_temp_sale"
+  const sql = "Select * from user_orders"
   connection.query(sql, (result, error) => {
     if (error) {
       res.send(error)
@@ -1283,80 +1280,337 @@ app.get("/mediplex/master_sale", (req, res) => {
 })
 
 
-app.get("/mediplex/bannerImage",(req,res)=>{
-  const sql=`SELECT id, image, status FROM app_banner where status= "Publish" `
+app.get("/mediplex/bannerImage", (req, res) => {
+  const sql = `SELECT id, image, status FROM app_banner where status= "Publish" `
 
-  connection.query(sql,(err,result)=>{
+  connection.query(sql, (err, result) => {
     if (err) {
       res.send(err)
     }
     res.send(result)
   })
+})
+
+
+
+app.get("/mediplex/verifyCart", (req, res) => {
+  const { product_id } = req.query;
+
+  const sql = `SELECT  COUNT(*) FROM master_sale WHERE sale_id=?`
+
+  connection.query(sql, [product_id], (err, result) => {
+    if (err) {
+
+      res.status(500).send('ClientId not found');
+      return;
+    }
+
+    if (result.length === 0) {
+      res.status(404).send(null);
+    } else {
+      console.log('item verify');
+      res.status(200).json(result);
+    }
+  })
+})
+
+
+
+app.get("/mediplex/wallet_amt", (req, res) => {
+  console.log(req.query)
+  const { client_id } = req.query
+  console.log(client_id)
+  const sql = "SELECT mani_wallet, shopping_wallet FROM client_profile_account where client_id=?"
+
+  connection.query(sql, [client_id], (error, results) => {
+    if (error) {
+      console.error('Error executing select query:', error);
+      return res.status(500).send('An error occurred while fetching the data.');
+    }
+    res.json(results);
   })
 
 
-
-  app.get("/mediplex/verifyCart",(req,res)=>{
-    const {product_id}= req.query;
-
-    const sql = `SELECT  COUNT(*) FROM master_sale WHERE sale_id=?`
-  
-    connection.query(sql,[product_id],(err,result)=>{
-      if (err) {
-
-        res.status(500).send('ClientId not found');
-        return;
-      }
-  
-      if (result.length === 0) {
-        res.status(404).send(null);
-      } else {
-        console.log('item verify');
-        res.status(200).json(result);
-      }
-    })
-  })
+})
 
 
 
-  app.get("/mediplex/wallet_amt", (req, res) => {
-    const { client_id } = req.query
-    console.log(client_id)
-    const sql = "SELECT mani_wallet FROM client_profile_account where client_id=?"
-  
-    connection.query(sql,[client_id], (error, results) => {
-      if (error) {
-        console.error('Error executing select query:', error);
-        return res.status(500).send('An error occurred while fetching the data.');
-      }
-      res.json(results);
-    })
-  
-  
-  })
-
-
-  
-  app.get("/mediplex/allOrders", (req, res) => {
-    const { uid } = req.query
-    const sql = `SELECT o.order_date, o.order_id, o.payment_method,o.payment_status,o.delivery_date, cpp.business_name,o.user_payable_amount FROM orders o
+app.get("/mediplex/allOrders", (req, res) => {
+  const { uid } = req.query
+  const sql = `SELECT o.order_date, o.order_id, o.payment_method,o.payment_status,o.delivery_new_date, cpp.business_name,o.user_payable_amount FROM orders o
      JOIN client_profile_personal cpp ON  o.lmc_id = cpp.client_id
 where o.user_id=?`
-  
-    connection.query(sql,[uid], (error, results) => {
-      if (error) {
-        console.error('Error executing select query:', error);
-        return res.status(500).send('An error occurred while fetching the data.');
-      }
-      res.json(results);
-    })
-  
-  
+
+  connection.query(sql, [uid], (error, results) => {
+    if (error) {
+      console.error('Error executing select query:', error);
+      return res.status(500).send('An error occurred while fetching the data.');
+    }
+    res.json(results);
   })
 
 
-  
+})
 
+
+
+app.get("/mediplex/pendingSale", (req, res) => {
+  const { uid } = req.query;
+  if (!uid) {
+    return res.status(400).send({ error: "User ID (uid) is required" });
+  }
+
+
+  const sql = `
+      SELECT  
+        mts.uid, 
+        mts.pid, 
+        mts.qty, 
+        mts.cdate, 
+        mts.status,
+        ms.price,
+        mts.location,
+        mts.batch_details,
+        mts.temp_order_id,
+        mts.payment_type,
+        cpp.business_name,
+        mp.name
+      FROM user_orders mts
+      JOIN master_sale ms
+        ON mts.pid = ms.sale_id
+      JOIN master_product mp
+        ON ms.pcode = mp.pcode  
+      JOIN client_profile_personal cpp 
+        ON mts.lmc_id = cpp.client_id
+      WHERE mts.uid = ? 
+      ORDER BY mts.id DESC;
+    `;
+
+  connection.query(sql, [uid], (err, result) => {
+    if (err) {
+      console.error("Error executing query:", err);
+      return res.status(500).send({ error: "Database query failed" });
+    }
+
+    res.status(200).send(result);
+  });
+});
+
+
+
+app.post("/mediplex/orderWalletDetails", (req, res) => {
+  const cdate_time = getCurrentDateTime();
+  const { uid, order_id, pid, main_wallet, shopping_wallet } = req.body;
+
+
+
+
+  const query = `INSERT INTO user_wallet_log(user_id,order_id, product_id,main_wallet,shopping_wallet,cdate) 
+                   VALUES (?,?,?, ?, ?, ?)`;
+
+  connection.query(query, [uid, order_id, pid, main_wallet, shopping_wallet, cdate_time], (err, result) => {
+    if (err) {
+      console.error('Error executing query:', err);
+      res.status(500).json({ error: 'Failed to insert data' });
+      return;
+    }
+    res.status(201).json({ message: 'Data inserted successfully', insertId: result.insertId });
+  });
+
+})
+
+
+
+app.post("/mediplex/cancelOrder", (req, res) => {
+  const cdate_time = getCurrentDateTime();
+  const { user_id, order_id } = req.body;
+
+  // Query to fetch `main_wallet_used` and `shopping_wallet_used` from `user_orders`
+  const selectWalletQuery = `
+    SELECT main_wallet_used, shopping_wallet_used
+    FROM user_orders
+    WHERE uid = ? AND temp_order_id = ?
+  `;
+
+  connection.query(selectWalletQuery, [user_id, order_id], (err, results) => {
+    if (err) {
+      console.error("Error fetching wallet data:", err);
+      return res.status(500).json({ error: "Database query failed" });
+    }
+
+    // Check if the order exists
+    if (results.length === 0) {
+      return res.status(404).json({ error: "No order found for this uid and order_id" });
+    }
+
+    const { main_wallet_used, shopping_wallet_used } = results[0];
+
+    // Query to update the status of the order
+    const updateOrderStatusQuery = `
+      UPDATE user_orders
+      SET 
+        status = 2,
+        cdate=?
+      WHERE uid = ? AND temp_order_id = ?
+    `;
+
+    connection.query(updateOrderStatusQuery, [cdate_time, user_id, order_id], (updateOrderErr) => {
+      if (updateOrderErr) {
+        console.error("Error updating order status:", updateOrderErr);
+        return res.status(500).json({ error: "Failed to update order status" });
+      }
+
+      // Query to add wallet values back to the `client_profile_account` table
+      const updateProfileQuery = `
+      UPDATE user_register_account
+      SET 
+        mani_wallet = mani_wallet + ?,
+        shopping_wallet = shopping_wallet + ?,
+        updated_at = ?
+      WHERE client_id = ?
+    `;
+
+      connection.query(updateProfileQuery, [main_wallet_used, shopping_wallet_used, cdate_time, user_id], (updateProfileErr, updateResults) => {
+        if (updateProfileErr) {
+          console.error("Error updating client profile:", updateProfileErr);
+          return res.status(500).json({ error: "Failed to update client profile" });
+        }
+
+        // Check if any rows were affected
+        if (updateResults.affectedRows === 0) {
+          return res.status(404).json({ error: "No client profile found for the given client_id" });
+        }
+
+        // Fetch the updated wallet values
+        const fetchUpdatedWalletQuery = `
+        SELECT mani_wallet, shopping_wallet 
+        FROM user_register_account 
+        WHERE client_id = ?
+      `;
+
+        connection.query(fetchUpdatedWalletQuery, [user_id], (fetchErr, fetchResults) => {
+          if (fetchErr) {
+            console.error("Error fetching updated wallet values:", fetchErr);
+            return res.status(500).json({ error: "Failed to fetch updated wallet values" });
+          }
+
+          if (fetchResults.length === 0) {
+            return res.status(404).json({ error: "Client profile not found after update" });
+          }
+
+          const { mani_wallet, shopping_wallet } = fetchResults[0];
+          return res.status(200).json({
+            message: "Order canceled and wallet values added successfully",
+            added_main_wallet: mani_wallet,
+            added_shopping_wallet: shopping_wallet,
+          });
+        });
+      });
+
+    });
+  });
+})
+
+
+
+app.post("/mediplex/register", (req, res) => {
+  const cdate_time = getCurrentDateTime();
+  const { name, mobile, password } = req.body.data;
+  console.log(req.body);
+  const random = Math.floor(1000 + Math.random() * 9000);
+
+  const client_id = `MM${random}`;
+
+  // Query to check if the mobile number already exists
+  const checkQuery = `SELECT mobile FROM user_register_account WHERE mobile = ?`;
+
+  connection.query(checkQuery, [mobile], (err, results) => {
+    if (err) {
+      console.error("Error executing query:", err);
+      res.status(500).json({ error: "Failed to check existing data" });
+      return;
+    }
+
+    // If mobile number exists, return a message
+    if (results.length > 0) {
+      res.status(409).json({ message: "User already exists" });
+      return;
+    }
+
+    // Query to insert new user
+    const insertQuery = `
+      INSERT INTO user_register_account (client_id, client_entry_name, mobile, client_entry_code, user_type, created_at, status)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    `;
+
+    connection.query(
+      insertQuery,
+      [client_id, name, mobile, password, "user App", cdate_time, "Active"],
+      (err, result) => {
+        if (err) {
+          console.error("Error executing query:", err);
+          res.status(500).json({ error: "Failed to insert data" });
+          return;
+        }
+
+        // Query to fetch the inserted row using the mobile number
+        const fetchQuery = `
+          SELECT * FROM user_register_account WHERE mobile = ?
+        `;
+
+        connection.query(fetchQuery, [mobile], (err, insertedRow) => {
+          if (err) {
+            console.error("Error fetching inserted row:", err);
+            res.status(500).json({ error: "Failed to fetch inserted data" });
+            return;
+          }
+
+          console.log("User registered successfully:", insertedRow[0]);
+
+          res.status(201).json({
+            message: "User registered successfully",
+            user: insertedRow[0], // Return the inserted row
+          });
+        });
+      }
+    );
+  });
+});
+
+
+
+
+app.get("/mediplex/userlogin", (req, res) => {
+  const { name, password } = req.query;
+  console.log(req)
+
+  // Query to check if the mobile number exists
+  const checkQuery = `SELECT * FROM user_register_account WHERE client_entry_name = ? AND client_entry_code = ?`;
+
+  connection.query(checkQuery, [name, password], (err, results) => {
+    if (err) {
+      console.error('Error executing query:', err);
+      res.status(500).json({ error: 'Failed to check existing data' });
+      return;
+    }
+
+    // If mobile number exists, return the user data
+    if (results.length > 0) {
+      res.status(200).json(results[0]);
+      return;
+    }
+
+    res.status(404).json({ message: 'User not found' });
+  });
+})
+
+
+
+
+// Start the server
+app.listen(3000, () => {
+  console.log("Server is running on port 3000");
+});
 
 
 app.get("/mediplex", (req, res) => {
