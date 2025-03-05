@@ -1213,7 +1213,6 @@ app.get("/mediplex/shoppingWalletDetails",(req,res)=>{
 
 app.get("/mediplex/searchProducts", (req, res) => {
   let { search, client_id } = req.query;
-  // console.log(req.query)
 
 
   if (!client_id || client_id.trim() === "") {
@@ -1224,7 +1223,7 @@ app.get("/mediplex/searchProducts", (req, res) => {
 
   let sql = `
     SELECT 
-      ms.id, ms.sale_id, ms.barcode, ms.batch_no, 
+    DISTINCT ms.id, ms.sale_id, ms.barcode, ms.batch_no, 
       ms.pcode, ms.mrp, ms.price, ms.todays_offer, 
       ms.best_selling, ms.cart_limit, ms.stock_status, 
       ms.first_purchase, ms.pincode, ms.image AS sale_image, 
@@ -1233,7 +1232,7 @@ app.get("/mediplex/searchProducts", (req, res) => {
       mp.details, mc.name AS category_name, 
       mb.name AS brand_name, mp.image AS product_image
     FROM master_sale ms
-    JOIN manage_lmc_order_details lod ON ms.sale_id = lod.pid  -- Ensure pid stores sale_id
+    JOIN manage_lmc_order_details lod ON ms.sale_id = lod.pid 
     JOIN master_product mp ON ms.pcode = mp.pcode
     JOIN manage_category mc ON mp.category = mc.cat_id
     JOIN manage_brand mb ON mp.brand = mb.brand_id
@@ -1256,7 +1255,6 @@ app.get("/mediplex/searchProducts", (req, res) => {
     res.json(results);
   });
 });
-
 
 
 
